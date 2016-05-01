@@ -1,4 +1,8 @@
-#!/usr/bin/env bash
+# Run this with the following on the command line:
+# `. setup.sh` (`source setup.sh` will also work)
+# Typing `bash setup.sh` or running it as a script (`./setup.sh`) will not work. These
+# methods create a temporary session in which the environment variables are created and
+# immediately removed when the script terminates.
 
 # Set USERAUTH_SERVICE_HOST to "0.0.0.0" to allow all connections, or "localhost" to allow only local connections.
 # If not set, defaults to "localhost"

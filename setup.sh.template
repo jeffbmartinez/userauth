@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Set USERAUTH_SERVICE_HOST to "0.0.0.0" to allow all connections, or "localhost" to allow only local connections.
+# If not set, defaults to "localhost"
+export USERAUTH_SERVICE_HOST="localhost"
+export USERAUTH_SERVICE_PORT="9003"
+
+export USERAUTH_GOOGLE_CLIENT_ID="{userauthGoogleClientID}"
+
+export USERAUTH_SECURE_COOKIE_HASH_KEY=$'{userauthSecureCookieHashKey}'
+export USERAUTH_SECURE_COOKIE_BLOCK_KEY=$'{userauthSecureCookieBlockKey}'

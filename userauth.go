@@ -2,19 +2,25 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
 
 	"github.com/jeffbmartinez/userauth/handler"
 )
 
-const (
-	userauthServiceHostEnv = "USERAUTH_SERVICE_HOST"
-	userauthServicePortEnv = "USERAUTH_SERVICE_PORT"
-)
+func init() {
+	viper.BindEnv("serviceHost", "USERAUTH_SERVICE_HOST")
+	viper.BindEnv("servicePort", "USERAUTH_SERVICE_PORT")
+
+	viper.SetDefault("serviceHost", "localhost")
+
+	log.SetFormatter(&log.JSONFormatter{})
+	log.SetOutput(os.Stdout)
+}
 
 func main() {
 	userauthServiceHost := getUserauthListenHost()
@@ -22,26 +28,29 @@ func main() {
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/verify/token/google", handler.VerifyGoogleIDToken)
+	r.HandleFunc("/login/google", handler.LoginGoogle)
+	r.HandleFunc("/logout", handler.Logout)
 
 	http.Handle("/", r)
 
 	listenDomain := fmt.Sprintf("%s:%s", userauthServiceHost, userauthServicePort)
-	log.Printf("Listening for connections on %s.\nConfigure by setting %s and %s environment variables.",
-		listenDomain, userauthServiceHostEnv, userauthServicePortEnv)
+	log.WithFields(log.Fields{
+		"host": userauthServiceHost,
+		"port": userauthServicePort,
+	}).Info("userauth service is starting")
 
 	err := http.ListenAndServe(listenDomain, nil)
-	log.Fatalf("Problem running server (%v)\n", err)
+	log.WithError(err).Fatal("Problem running server")
 }
 
 func getUserauthListenHost() string {
-	return os.Getenv(userauthServiceHostEnv)
+	return viper.GetString("serviceHost")
 }
 
 func getUserauthListenPort() string {
-	userauthServicePort := os.Getenv(userauthServicePortEnv)
+	userauthServicePort := viper.GetString("servicePort")
 	if userauthServicePort == "" {
-		log.Fatalf("Environment variable (%v) required and not found\n", userauthServicePortEnv)
+		log.Fatal("Listen port configuration is not set. It is required.")
 	}
 
 	return userauthServicePort

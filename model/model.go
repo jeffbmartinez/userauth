@@ -1,5 +1,10 @@
 package model
 
+const (
+	// SIDCookieName is the name of the cookie stored by the userauth service
+	SIDCookieName = "sid"
+)
+
 /*
 GoogleTokenInfo models the response from calling the google user sign-in token id.
 For more info see
@@ -22,4 +27,10 @@ type GoogleTokenInfo struct {
 	GivenName  string `json:"given_name"`
 	FamilyName string `json:"family_name"`
 	Locale     string `json:"locale"`
+}
+
+// SIDCookie contains the session ID information for a user's session.
+type SIDCookie struct {
+	SID string `json:"sid"` // Session ID
+	UID string `json:"uid"` // User ID
 }

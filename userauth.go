@@ -30,6 +30,7 @@ func main() {
 
 	r.HandleFunc("/login/google", handler.LoginGoogle)
 	r.HandleFunc("/logout", handler.Logout)
+	r.HandleFunc("/verify/session", handler.VerifySession)
 
 	http.Handle("/", r)
 

@@ -6,37 +6,17 @@ import (
 	"net/http"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/gorilla/securecookie"
 	"github.com/jeffbmartinez/respond"
 	uuid "github.com/satori/go.uuid"
 	"github.com/spf13/viper"
 
 	"github.com/jeffbmartinez/userauth/model"
+	"github.com/jeffbmartinez/userauth/safecookie"
 )
 
 const (
 	googleTokenInfoEndpoint = "https://www.googleapis.com/oauth2/v3/tokeninfo?id_token="
 )
-
-var safeCookie *securecookie.SecureCookie
-
-func init() {
-	viper.BindEnv("googleClientID", "USERAUTH_GOOGLE_CLIENT_ID")
-	viper.BindEnv("secureCookieHashKey", "USERAUTH_SECURE_COOKIE_HASH_KEY")
-	viper.BindEnv("secureCookieBlockKey", "USERAUTH_SECURE_COOKIE_BLOCK_KEY")
-
-	hashKey := viper.GetString("secureCookieHashKey")
-	if hashKey == "" {
-		log.Fatal("Secure cookie hash key has not been configured. User authentication is not possible.")
-	}
-
-	blockKey := viper.GetString("secureCookieBlockKey")
-	if blockKey == "" {
-		log.Fatal("Secure cooke block key has not been configured. User authentication is unsafe.")
-	}
-
-	safeCookie = securecookie.New([]byte(hashKey), []byte(blockKey))
-}
 
 /*
 LoginGoogleRequest represents the request body for /login/google
@@ -72,7 +52,7 @@ func LoginGoogle(w http.ResponseWriter, r *http.Request) {
 
 	var requestBody LoginGoogleRequest
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-		log.WithError(err).Error("Couldn't decode request body")
+		log.WithError(err).Warn("Couldn't decode request body in LoginGoogle")
 		respond.Simple(w, http.StatusBadRequest)
 		return
 	}
@@ -130,32 +110,32 @@ func LoginGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookieValues := map[string]string{
-		"sid": uuid.NewV4().String(),
-		"uid": decodedIDToken.Email,
+	cookie := model.SIDCookie{
+		SID: uuid.NewV4().String(),
+		UID: decodedIDToken.Email,
 	}
 
-	sidCookie, err := createSecureCookie("sid", cookieValues)
+	encryptedCookie, err := createSecureCookie(model.SIDCookieName, cookie)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"googleUserId": decodedIDToken.SUB,
 			"email":        decodedIDToken.Email,
-			"sid":          cookieValues["sid"],
-			"uid":          cookieValues["uid"],
+			"sid":          cookie.SID,
+			"uid":          cookie.UID,
 		}).Error("Couldn't encode cookie values, can't create session")
 
 		respond.Simple(w, http.StatusInternalServerError)
 		return
 	}
 
-	http.SetCookie(w, sidCookie)
+	http.SetCookie(w, encryptedCookie)
 
 	response := LoginGoogleResponse{Success: true}
 	respond.JSON(w, response, http.StatusOK)
 }
 
 func createSecureCookie(cookieName string, cookieValues interface{}) (*http.Cookie, error) {
-	encodedCookieValue, err := safeCookie.Encode(cookieName, cookieValues)
+	encodedCookieValue, err := safecookie.Get().Encode(cookieName, cookieValues)
 	if err != nil {
 		return nil, err
 	}
@@ -164,7 +144,7 @@ func createSecureCookie(cookieName string, cookieValues interface{}) (*http.Cook
 		Name:  cookieName,
 		Value: encodedCookieValue,
 		Path:  "/",
-		// Secure:   true,
+		// Secure:   true, // TODO: https://bitbucket.org/jeffbmartinez/doer/issues/39/enable-secure-cookies-in-userauth
 		HttpOnly: true,
 	}, nil
 }

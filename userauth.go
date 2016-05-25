@@ -16,8 +16,12 @@ func init() {
 	viper.BindEnv("serviceHost", "USERAUTH_SERVICE_HOST")
 	viper.BindEnv("servicePort", "USERAUTH_SERVICE_PORT")
 
+	viper.BindEnv("logLevel", "USERAUTH_LOG_LEVEL")
+
 	viper.SetDefault("serviceHost", "localhost")
 
+	logLevel := getLogLevel()
+	log.SetLevel(logLevel)
 	log.SetFormatter(&log.JSONFormatter{})
 	log.SetOutput(os.Stdout)
 }
@@ -30,7 +34,8 @@ func main() {
 
 	r.HandleFunc("/login/google", handler.LoginGoogle)
 	r.HandleFunc("/logout", handler.Logout)
-	r.HandleFunc("/verify/session", handler.VerifySession)
+	r.HandleFunc("/session/info", handler.SessionInfo)
+	r.HandleFunc("/ping", handler.Ping)
 
 	http.Handle("/", r)
 
@@ -55,4 +60,29 @@ func getUserauthListenPort() string {
 	}
 
 	return userauthServicePort
+}
+
+func getLogLevel() log.Level {
+	defaultLogLevel := log.InfoLevel
+
+	logLevel := viper.GetString("logLevel")
+
+	switch logLevel {
+	case "debug":
+		return log.DebugLevel
+	case "info":
+		return log.InfoLevel
+	case "warn":
+		fallthrough
+	case "warning":
+		return log.WarnLevel
+	case "error":
+		return log.ErrorLevel
+	case "fatal":
+		return log.FatalLevel
+	case "panic":
+		return log.PanicLevel
+	default:
+		return defaultLogLevel
+	}
 }

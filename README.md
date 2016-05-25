@@ -61,9 +61,9 @@ There is no request body. A user is logged out by expiring their session ID cook
 
 A 200 OK response is the only relevant thing sent back. Any other response is an indicator that something went wrong.
 
-### POST /verify/session
+### POST /session/info
 
-Verifies a session ID.
+Returns information on an encrypted session ID.
 
 * Note: This request is meant to be made from server side code, rather than any client side (browser javascript) code. Since the session ID cookie is set as [httponly](https://www.owasp.org/index.php/HttpOnly), it shouldn't be possible for the javascript code to know what these are in order to make the request.
 
@@ -71,13 +71,13 @@ Verifies a session ID.
 
 A JSON string containing:
 
-* `sid` - The value of a session ID cookie as set by, for example, a call to `/login/*`.
+* `sid` - The value of the encrypted session ID cookie as set by, for example, a call to `/login/*`.
 
 Example:
 
 ```
 {
-  "sid": "[session ID cookie value goes here]",
+  "sid": "[encrypted session ID cookie goes here]",
 }
 ```
 
@@ -85,20 +85,18 @@ Example:
 
 A JSON string containing:
 
-* `valid` - boolean: true if the session ID is valid, false otherwise.
-* `reason` - string: If `value` is `true`, this will be an empty string. If `value` is false, `reason` contains an explanation for why the verification failed. It will contain one of:
-    * `notfound` - No record was found of the session ID.
-    * `expired` - The session ID is expired.
+* `sid` - The decrypted session id.
+* `uid` = The decrypted unique user id.
 
 
 ```
 {
-  "valid" : false,
-  "reason": "expired"
+  "sid" : "[decrypted session id]",
+  "uid": "[unique user id]"
 }
 ```
 
-## Redis storage schema
+## Redis storage schema [not implemented yet]
 
 [Redis](http://redis.io/) is used to persist the userauth data. If you're new to redis, try the [interactive redis tutorial](http://try.redis.io/) to get a feel for how it works.
 

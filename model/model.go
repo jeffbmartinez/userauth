@@ -34,3 +34,8 @@ type SIDCookie struct {
 	SID string `json:"sid"` // Session ID
 	UID string `json:"uid"` // User ID
 }
+
+// SessionInfoRequest represents a request for /session/info
+type SessionInfoRequest struct {
+	SID string `json:"sid"` // encrypted session ID cookie value (contains both sid and uid)
+}

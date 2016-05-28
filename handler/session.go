@@ -20,9 +20,9 @@ func SessionInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := getSIDCookie(r)
+	cookie, err := getSessionCookie(r)
 	if err != nil {
-		log.WithError(err).Debug("Couldn't decode sid cookie")
+		log.WithError(err).Debug("Couldn't decode session info cookie")
 		respond.Simple(w, http.StatusBadRequest)
 		return
 	}
@@ -30,21 +30,21 @@ func SessionInfo(w http.ResponseWriter, r *http.Request) {
 	respond.JSON(w, cookie, http.StatusOK)
 }
 
-func getSIDCookie(r *http.Request) (model.SIDCookie, error) {
+func getSessionCookie(r *http.Request) (model.SessionCookie, error) {
 	var requestBody model.SessionInfoRequest
 	if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
 		log.WithError(err).Debug("Couldn't decode request body in SessionVerify")
-		return model.SIDCookie{}, err
+		return model.SessionCookie{}, err
 	}
 	defer r.Body.Close()
 
-	var cookie model.SIDCookie
-	if err := safecookie.Get().Decode(model.SIDCookieName, requestBody.SID, &cookie); err != nil {
+	var cookie model.SessionCookie
+	if err := safecookie.Get().Decode(model.SessionCookieName, requestBody.SessionInfo, &cookie); err != nil {
 		log.WithError(err).WithFields(log.Fields{
-			"cookie": requestBody.SID,
+			"cookie": requestBody.SessionInfo,
 		}).Debug("Couldn't decode sid cookie")
 
-		return model.SIDCookie{}, err
+		return model.SessionCookie{}, err
 	}
 
 	return cookie, nil

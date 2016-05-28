@@ -110,12 +110,12 @@ func LoginGoogle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := model.SIDCookie{
+	cookie := model.SessionCookie{
 		SID: uuid.NewV4().String(),
 		UID: decodedIDToken.Email,
 	}
 
-	encryptedCookie, err := createSecureCookie(model.SIDCookieName, cookie)
+	encryptedCookie, err := safecookie.MakeEncryptedSessionCookie(cookie)
 	if err != nil {
 		log.WithError(err).WithFields(log.Fields{
 			"googleUserId": decodedIDToken.SUB,
@@ -132,19 +132,4 @@ func LoginGoogle(w http.ResponseWriter, r *http.Request) {
 
 	response := LoginGoogleResponse{Success: true}
 	respond.JSON(w, response, http.StatusOK)
-}
-
-func createSecureCookie(cookieName string, cookieValues interface{}) (*http.Cookie, error) {
-	encodedCookieValue, err := safecookie.Get().Encode(cookieName, cookieValues)
-	if err != nil {
-		return nil, err
-	}
-
-	return &http.Cookie{
-		Name:  cookieName,
-		Value: encodedCookieValue,
-		Path:  "/",
-		// Secure:   true, // TODO: https://bitbucket.org/jeffbmartinez/doer/issues/39/enable-secure-cookies-in-userauth
-		HttpOnly: true,
-	}, nil
 }

@@ -2,9 +2,10 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/jeffbmartinez/respond"
+
+	"github.com/jeffbmartinez/userauth/safecookie"
 )
 
 /*
@@ -17,19 +18,9 @@ func Logout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/* A cookie can't really be deleted. Overwriting an existing cookie of the same name
-	with a cookie that expires immediately is the next best thing.
-	Also set the value to an empty string to be safe. */
-	expiredSidCookie := http.Cookie{
-		Name:     "sid",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   0,               // Get cookie to expire now
-		Expires:  time.Unix(0, 0), // Set cookie to expire in the past
-	}
-
-	http.SetCookie(w, &expiredSidCookie)
+	// A cookie can't really be deleted. Overwriting an existing cookie of the same name
+	// with a cookie that expires immediately is the next best thing.
+	http.SetCookie(w, safecookie.GetExpiredSessionCookie())
 
 	respond.Simple(w, http.StatusOK)
 }

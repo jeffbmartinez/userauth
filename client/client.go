@@ -2,7 +2,8 @@
 package client
 
 import (
-	"errors"
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 
@@ -32,54 +33,55 @@ func NewClient(hostname string, port string) *Client {
 
 // SessionInfoRequestBody represents the body of a request to /session/info
 type SessionInfoRequestBody struct {
-	SID string `json:"sid"`
+	SessionInfo string `json:"sessionInfo"`
 }
 
 // SessionInfo calls the user auth endpoint to decode an encrypted session ID cookie
 // and returns the contents. If err is set, something went wrong. If err is nil but
 // the cookie returned is empty, the session is not valid.
-func (c Client) SessionInfo(sid string) (model.SIDCookie, error) {
+func (c Client) SessionInfo(sessionInfo string) (model.SessionCookie, error) {
 	sessionInfoRequestBody := SessionInfoRequestBody{
-		SID: sid,
+		SessionInfo: sessionInfo,
 	}
 
 	sessionInfoRequestBodyBytes, err := json.Marshal(sessionInfoRequestBody)
 	if err != nil {
-		return model.SIDCookie{}, err
+		return model.SessionCookie{}, err
 	}
 
 	requestBody := bytes.NewBuffer(sessionInfoRequestBodyBytes)
 	endpoint := fmt.Sprintf(sessionInfoEndpointTemplate, c.Protocol, c.Hostname, c.Port)
 	response, err := http.Post(endpoint, "application/json", requestBody)
 	if err != nil {
-		return model.SIDCookie{}, err
+		return model.SessionCookie{}, err
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return model.SIDCookie{}, errors.New("Response code not OK, got %d (%s)", response.StatusCode, response.Status)
+		err := fmt.Errorf("Response code not OK, got %d (%s)", response.StatusCode, response.Status)
+		return model.SessionCookie{}, err
 	}
 
-	var sidCookie model.SIDCookie
-	err = json.NewDecoder(response.Body).Decode(&sidCookie)
+	var sessionCookie model.SessionCookie
+	err = json.NewDecoder(response.Body).Decode(&sessionCookie)
 	if err != nil {
-		return model.SIDCookie{}, err
+		return model.SessionCookie{}, err
 	}
 	defer response.Body.Close()
 
-	return sidCookie, nil
+	return sessionCookie, nil
 }
 
 // Ping returns an error if there was a problem pinging the user auth service.
 // On successful ping, Ping returns nil.
 func (c Client) Ping() error {
 	endpoint := fmt.Sprintf(pingEndpointTemplate, c.Protocol, c.Hostname, c.Port)
-	response := http.Get(endpoint)
+	response, err := http.Get(endpoint)
 	if err != nil {
 		return err
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return errors.New("Expected 200 OK response from /ping, got %d %s", response.StatusCode, response.Status)
+		return fmt.Errorf("Expected 200 OK response from /ping, got %d %s", response.StatusCode, response.Status)
 	}
 
 	return nil

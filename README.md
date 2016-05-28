@@ -34,7 +34,7 @@ There are two relevant portions to the response:
 
 1. The response body is a json string containing one key (`success`) with the value being `true` if the login request succeeded and `false` otherwise.
 1. When the login request succeeds, an [httponly](https://www.owasp.org/index.php/HttpOnly) and [secure](https://www.owasp.org/index.php/SecureFlag) cookie will be sent back. This means a `Set-Cookie` header will be present in the response:
-    * `sid` (session ID) - Contains a unique session ID string which should be set as a cookie in subsequent requests to the server. The session ID will be checked against the user's session ID.
+    * `session_info` - Contains encrypted info about a user's session which should be set as a cookie in subsequent requests to the server.
 
 Example HTTP response:
 
@@ -42,7 +42,7 @@ Example HTTP response:
 HTTP/1.1 200 OK
 [other headers...]
 Content-Type: application/json
-Set-Cookie: sid=[the cookie value goes here]; HttpOnly; Secure
+Set-Cookie: session_info=[the cookie value goes here]; HttpOnly; Secure
 
 { "success" : true }
 ```
@@ -63,7 +63,7 @@ A 200 OK response is the only relevant thing sent back. Any other response is an
 
 ### POST /session/info
 
-Returns information on an encrypted session ID.
+Returns information on an encrypted session.
 
 * Note: This request is meant to be made from server side code, rather than any client side (browser javascript) code. Since the session ID cookie is set as [httponly](https://www.owasp.org/index.php/HttpOnly), it shouldn't be possible for the javascript code to know what these are in order to make the request.
 
@@ -71,13 +71,13 @@ Returns information on an encrypted session ID.
 
 A JSON string containing:
 
-* `sid` - The value of the encrypted session ID cookie as set by, for example, a call to `/login/*`.
+* `sessionInfo` - The value of the encrypted session info cookie as set by, for example, a call to `/login/*`.
 
 Example:
 
 ```
 {
-  "sid": "[encrypted session ID cookie goes here]",
+  "sessionInfo": "[encrypted session info cookie goes here]",
 }
 ```
 
@@ -95,26 +95,3 @@ A JSON string containing:
   "uid": "[unique user id]"
 }
 ```
-
-## Redis storage schema [not implemented yet]
-
-[Redis](http://redis.io/) is used to persist the userauth data. If you're new to redis, try the [interactive redis tutorial](http://try.redis.io/) to get a feel for how it works.
-
-Certain pieces of information are persisted in order to keep track of user authentication.
-
-The following are stored in redis and used store information about third party IDs, userauth IDs, and session IDs.
-
-### Third party ID Lookup
-
-| Key Name | Value | Value Type | Description |
-| --- | --- | --- | --- |
-| google-id:{id} | userauth ID | string | Look up userauth ID by google ID |
-
-### Session Information
-
-| Key Name | Value | Value Type | Description |
-| --- | --- | --- | --- |
-| session:{session-id} | userauth ID | string | Look up a userauth ID by a session ID |
-| user:{userauth-id} | session ID | string | Look up a session ID by a userauth ID |
-
-When these entries are created they will be followed up with an [EXPIRE](http://redis.io/commands/expire) call to ensure they expire after a set amount of time. Once that happens the entries will be gone.

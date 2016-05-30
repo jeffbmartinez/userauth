@@ -12,6 +12,9 @@ func main() {
 	fmt.Println("----- Keys -----")
 	for _, keyLength := range keyLengths {
 		key := securecookie.GenerateRandomKey(keyLength)
+		for hasNullCharacter(key) {
+			key = securecookie.GenerateRandomKey(keyLength)
+		}
 
 		fmt.Printf("%d bytes: ", keyLength)
 		for _, ch := range key {
@@ -25,4 +28,14 @@ func main() {
 
 		fmt.Println("\n----------------")
 	}
+}
+
+func hasNullCharacter(key []byte) bool {
+	for _, byt := range key {
+		if byt == 0 {
+			return true
+		}
+	}
+
+	return false
 }

@@ -11,6 +11,11 @@ import (
 	"github.com/jeffbmartinez/userauth/model"
 )
 
+const (
+	hashKeySize  = 64
+	blockKeySize = 32
+)
+
 var (
 	safeCookie *securecookie.SecureCookie
 
@@ -36,16 +41,26 @@ func init() {
 	viper.BindEnv("secureCookieBlockKey", "USERAUTH_SECURE_COOKIE_BLOCK_KEY")
 
 	hashKey := viper.GetString("secureCookieHashKey")
-	if hashKey == "" {
-		log.Fatal("Secure cookie hash key has not been configured. User authentication is not possible.")
+	if hashKey == "" || numBytes(hashKey) < hashKeySize {
+		log.Fatal("Secure cookie hash key has not been configured or is too short. User authentication is not possible.")
+	}
+	if numBytes(hashKey) > hashKeySize {
+		log.Warnf("Secure cookie hash key is %d bytes, truncating to only use first %d bytes", numBytes(hashKey), hashKeySize)
 	}
 
 	blockKey := viper.GetString("secureCookieBlockKey")
-	if blockKey == "" {
-		log.Fatal("Secure cookie block key has not been configured. User authentication is unsafe.")
+	if blockKey == "" || numBytes(blockKey) < blockKeySize {
+		log.Fatal("Secure cookie block key has not been configured or is too short. User authentication is unsafe.")
+	}
+	if numBytes(blockKey) > blockKeySize {
+		log.Warnf("Secure cookie block key is %d bytes, truncating to only use first %d bytes", numBytes(blockKey), blockKeySize)
 	}
 
-	safeCookie = securecookie.New([]byte(hashKey), []byte(blockKey))
+	safeCookie = securecookie.New([]byte(hashKey)[:hashKeySize], []byte(blockKey)[:blockKeySize])
+}
+
+func numBytes(s string) int {
+	return len([]byte(s))
 }
 
 /*

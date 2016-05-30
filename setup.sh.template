@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 # Run this with the following on the command line:
 # `. setup.sh` (`source setup.sh` will also work)
 # Typing `bash setup.sh` or running it as a script (`./setup.sh`) will not work. These
@@ -11,5 +13,11 @@ export USERAUTH_SERVICE_PORT="9003"
 
 export USERAUTH_GOOGLE_CLIENT_ID="{userauthGoogleClientID}"
 
+# must be 64 bytes. If it's longer, only 64 bytes are used. If it's shorter, the userauth wont work.
 export USERAUTH_SECURE_COOKIE_HASH_KEY=$'{userauthSecureCookieHashKey}'
+
+# must be 32 bytes. If it's longer, only 32 bytes are used. If it's shorter, the userauth wont work.
 export USERAUTH_SECURE_COOKIE_BLOCK_KEY=$'{userauthSecureCookieBlockKey}'
+
+# one of: debug, info, warn, error, fatal, panic
+export USERAUTH_LOG_LEVEL="debug"

@@ -75,12 +75,14 @@ func LoginGoogle(w http.ResponseWriter, r *http.Request) {
 	defer googleResponse.Body.Close()
 
 	// Optional config setting. If set, the token being verified must
-	// have a matching id in the hd (hosted domain) claim
+	// have a matching id in the hd (hosted domain) claim. This means *only* users
+	// coming from this company/hosted domain will be able to use this instance
+	// of userauth. This means no other gmail users can access this service.
 	userauthGoogleHostedDomainID := viper.GetString("googleHostedDomainID")
 
 	// For Google Apps for Work user: check the 'hd' claim
-	// If either userauth or google's token expects a hosted domain ID, it should be checked
-	if userauthGoogleHostedDomainID != "" || decodedIDToken.HD != "" {
+	// If userauth expects a hosted domain ID, it should be checked
+	if userauthGoogleHostedDomainID != "" {
 		if userauthGoogleHostedDomainID != decodedIDToken.HD {
 			log.WithFields(log.Fields{
 				"received": decodedIDToken.HD,

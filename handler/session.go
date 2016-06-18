@@ -44,7 +44,7 @@ func getSessionCookie(r *http.Request) (model.SessionCookie, error) {
 			"cookie": requestBody.SessionInfo,
 		}).Debug("Couldn't decode sid cookie")
 
-		return model.SessionCookie{}, err
+		return model.SessionCookie{}, nil
 	}
 
 	return cookie, nil

@@ -79,9 +79,10 @@ func MakeEncryptedSessionCookie(sessionCookie model.SessionCookie) (*http.Cookie
 	}
 
 	return &http.Cookie{
-		Name:  model.SessionCookieName,
-		Value: encodedCookieValue,
-		Path:  "/",
+		Name:    model.SessionCookieName,
+		Value:   encodedCookieValue,
+		Path:    "/",
+		Expires: time.Now().Add(365 * 24 * time.Hour),
 		// Secure:   true, // TODO: https://bitbucket.org/jeffbmartinez/doer/issues/39/enable-secure-cookies-in-userauth
 		HttpOnly: true,
 	}, nil
